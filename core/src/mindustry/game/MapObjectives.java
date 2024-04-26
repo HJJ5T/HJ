@@ -618,12 +618,18 @@ public class MapObjectives implements Iterable<MapObjective>, Eachable<MapObject
         public boolean world = true;
         /** Whether to display marker on minimap. */
         public boolean minimap = false;
+        /** Whether the marker should act as a light source. */
+        public boolean light = false;
         /** Whether to scale marker corresponding to player's zoom level. */
         public boolean autoscale = false;
         /** On which z-sorting layer is marker drawn. */
         protected float drawLayer = Layer.overlayUI;
 
         public void draw(float scaleFactor){}
+
+        public void drawLight(float scaleFactor){
+            draw(scaleFactor);
+        }
 
         /** Control marker with world processor code. Ignores NaN (null) values. */
         public void control(LMarkerControl type, double p1, double p2, double p3){
@@ -632,6 +638,7 @@ public class MapObjectives implements Iterable<MapObjective>, Eachable<MapObject
             switch(type){
                 case world -> world = !Mathf.equal((float)p1, 0f);
                 case minimap -> minimap = !Mathf.equal((float)p1, 0f);
+                case light -> light = !Mathf.equal((float)p1, 0f);
                 case autoscale -> autoscale = !Mathf.equal((float)p1, 0f);
                 case drawLayer -> drawLayer = (float)p1;
             }
@@ -831,8 +838,13 @@ public class MapObjectives implements Iterable<MapObjective>, Eachable<MapObject
             Draw.z(drawLayer);
             Lines.stroke(Scl.scl((1f - fin) * stroke + 0.1f), color);
             Lines.circle(pos.x, pos.y, rad * fin);
+        }
 
-            Draw.reset();
+        @Override
+        public void drawLight(float scaleFactor){
+            float rad = radius * tilesize * scaleFactor;
+
+            renderer.lights.add(pos.x, pos.y, radius, color, color.a);
         }
 
         @Override
@@ -890,8 +902,6 @@ public class MapObjectives implements Iterable<MapObjective>, Eachable<MapObject
                     Fill.arc(pos.x, pos.y, radius * scaleFactor, (startAngle - endAngle) / 360f, rotation + endAngle, sides);
                 }
             }
-
-            Draw.reset();
         }
 
         @Override
@@ -1030,6 +1040,11 @@ public class MapObjectives implements Iterable<MapObjective>, Eachable<MapObject
 
             Lines.stroke(stroke * scaleFactor, Color.white);
             Lines.line(pos.x, pos.y, color1, endPos.x, endPos.y, color2);
+        }
+
+        @Override
+        public void drawLight(float scaleFactor){
+            renderer.lights.line(pos.x, pos.y, endPos.x, endPos.y, stroke, color1, color1.a);
         }
 
         @Override
